@@ -92,14 +92,23 @@ export interface Achievement {
 }
 
 // User/Auth types
+export interface UserStats {
+  totalPlayTime: number;
+  highestDay: number;
+  achievementsUnlocked: number;
+  totalRevenue: number;
+}
+
 export interface User {
   id: string;
   email: string;
+  username: string;
   displayName?: string;
   avatar?: string;
   subscription: SubscriptionTier;
   subscriptionExpiresAt?: number;
-  createdAt: number;
+  createdAt: number | Date;
+  stats?: UserStats;
 }
 
 export type SubscriptionTier = 'free' | 'starter' | 'pro' | 'enterprise';

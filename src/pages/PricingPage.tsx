@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Crown, Zap, Star, Building } from 'lucide-react';
+import { Check, Crown, Zap, Star, Building, ExternalLink, CreditCard, Shield } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { subscriptionPlans, formatPrice, getPlanBadgeColor } from '../data/subscriptions';
 import { Button, Badge, Card } from '../components/ui';
 import { cn } from '../utils/helpers';
 import { SubscriptionTier } from '../types';
+import {
+  redirectToCheckout,
+  createPortalSession,
+  isStripeConfigured,
+  SUBSCRIPTION_PLANS
+} from '../services/paymentService';
 
 interface PricingPageProps {
   onClose?: () => void;
@@ -15,9 +21,11 @@ export function PricingPage({ onClose }: PricingPageProps) {
   const [isYearly, setIsYearly] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionTier | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { user, updateSubscription } = useAuthStore();
   const currentPlan = user?.subscription || 'free';
+  const stripeEnabled = isStripeConfigured();
 
   const planIcons: Record<SubscriptionTier, React.ReactNode> = {
     free: <Zap className="w-6 h-6" />,
@@ -27,29 +35,101 @@ export function PricingPage({ onClose }: PricingPageProps) {
   };
 
   const handleSubscribe = async (tier: SubscriptionTier) => {
-    if (tier === 'free') return;
+    if (tier === 'free' || !user) return;
 
     setSelectedPlan(tier);
     setIsProcessing(true);
+    setError(null);
 
-    // Simulate payment processing
-    // In production, this would redirect to Stripe Checkout
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      if (stripeEnabled) {
+        // Use Stripe Checkout for real payments
+        const billingPeriod = isYearly ? 'yearly' : 'monthly';
+        const success = await redirectToCheckout(
+          tier as Exclude<SubscriptionTier, 'free'>,
+          billingPeriod,
+          user.id,
+          user.email
+        );
 
-    // Update subscription
-    const expiresAt = Date.now() + (isYearly ? 365 : 30) * 24 * 60 * 60 * 1000;
-    updateSubscription(tier, expiresAt);
+        if (!success) {
+          setError('결제 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+        }
+      } else {
+        // Demo mode - simulate payment
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-    setIsProcessing(false);
-    setSelectedPlan(null);
+        // Update subscription locally
+        const expiresAt = Date.now() + (isYearly ? 365 : 30) * 24 * 60 * 60 * 1000;
+        updateSubscription(tier, expiresAt);
 
-    if (onClose) {
-      onClose();
+        if (onClose) {
+          onClose();
+        }
+      }
+    } catch (err) {
+      console.error('Subscription error:', err);
+      setError('결제 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsProcessing(false);
+      setSelectedPlan(null);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    if (!user) return;
+
+    setIsProcessing(true);
+    try {
+      const portalUrl = await createPortalSession(user.id);
+      if (portalUrl) {
+        window.open(portalUrl, '_blank');
+      }
+    } catch (err) {
+      console.error('Portal error:', err);
+      setError('구독 관리 페이지를 열 수 없습니다.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   return (
     <div className="space-y-6">
+      {/* Demo mode notice */}
+      {!stripeEnabled && (
+        <div className="p-4 rounded-lg bg-warning-900/20 border border-warning-700/30">
+          <div className="flex items-center gap-2 text-warning-400">
+            <Shield className="w-5 h-5" />
+            <span className="font-medium">데모 모드</span>
+          </div>
+          <p className="text-sm text-warning-400/80 mt-1">
+            Stripe가 설정되지 않아 데모 모드로 실행 중입니다. 실제 결제 없이 구독이 활성화됩니다.
+          </p>
+        </div>
+      )}
+
+      {/* Current subscription management */}
+      {currentPlan !== 'free' && (
+        <Card className="p-4 bg-success-900/10 border-success-700/30">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-dark-400">현재 플랜</p>
+              <p className="text-lg font-semibold text-success-400">
+                {subscriptionPlans.find(p => p.id === currentPlan)?.name} 구독 중
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleManageSubscription}
+              rightIcon={<ExternalLink className="w-4 h-4" />}
+            >
+              구독 관리
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* Billing toggle */}
       <div className="flex items-center justify-center gap-4">
         <span className={cn(
@@ -82,6 +162,13 @@ export function PricingPage({ onClose }: PricingPageProps) {
           </Badge>
         </span>
       </div>
+
+      {/* Error message */}
+      {error && (
+        <div className="p-3 rounded-lg bg-danger-900/20 border border-danger-700/30">
+          <p className="text-sm text-danger-400">{error}</p>
+        </div>
+      )}
 
       {/* Plans grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -166,12 +253,24 @@ export function PricingPage({ onClose }: PricingPageProps) {
                     ? '현재 플랜'
                     : plan.id === 'free'
                     ? '무료'
-                    : '구독하기'}
+                    : stripeEnabled
+                    ? '결제하기'
+                    : '구독하기 (데모)'}
                 </Button>
               </Card>
             </motion.div>
           );
         })}
+      </div>
+
+      {/* Secure payment notice */}
+      <div className="flex items-center justify-center gap-2 text-dark-400">
+        <Shield className="w-4 h-4" />
+        <span className="text-sm">
+          {stripeEnabled
+            ? 'Stripe를 통한 안전한 결제'
+            : '데모 모드 - 실제 결제 없음'}
+        </span>
       </div>
 
       {/* FAQs or additional info */}
@@ -188,7 +287,7 @@ export function PricingPage({ onClose }: PricingPageProps) {
       <div className="flex items-center justify-center gap-4 pt-4 border-t border-dark-700">
         <span className="text-xs text-dark-500">결제 수단:</span>
         <div className="flex items-center gap-2 text-dark-400">
-          <span className="text-lg">💳</span>
+          <CreditCard className="w-4 h-4" />
           <span className="text-xs">신용카드</span>
         </div>
         <div className="flex items-center gap-2 text-dark-400">

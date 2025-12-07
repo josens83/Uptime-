@@ -1,18 +1,24 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { User, SubscriptionTier, SaveData } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+import * as authService from '../services/authService';
+import { isDemoMode } from '../config/firebase';
 
 interface AuthStore {
   user: User | null;
   isLoading: boolean;
+  isInitialized: boolean;
   error: string | null;
   saves: SaveData[];
 
   // Auth actions
+  initialize: () => () => void;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, displayName?: string) => Promise<boolean>;
-  logout: () => void;
+  loginWithGoogle: () => Promise<boolean>;
+  loginWithGithub: () => Promise<boolean>;
+  register: (email: string, password: string, username?: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<boolean>;
   updateProfile: (updates: Partial<User>) => void;
 
   // Subscription actions
@@ -26,78 +32,193 @@ interface AuthStore {
   renameSave: (saveId: string, newName: string) => void;
   getSaveLimit: () => number;
 
+  // Stats
+  updateStats: (stats: Partial<User['stats']>) => Promise<void>;
+
   // Error handling
   clearError: () => void;
 }
 
-// Simulated user database (in production, this would be a real backend)
-const mockUsers: Map<string, { password: string; user: User }> = new Map();
+// Generate unique ID
+const generateId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       user: null,
       isLoading: false,
+      isInitialized: false,
       error: null,
       saves: [],
+
+      initialize: () => {
+        // Subscribe to auth state changes
+        const unsubscribe = authService.onAuthChange((user) => {
+          set({ user, isInitialized: true, isLoading: false });
+        });
+
+        // For demo mode, check localStorage
+        if (isDemoMode()) {
+          const demoUser = localStorage.getItem('uptime_demo_user');
+          if (demoUser) {
+            try {
+              set({ user: JSON.parse(demoUser), isInitialized: true });
+            } catch {
+              set({ isInitialized: true });
+            }
+          } else {
+            set({ isInitialized: true });
+          }
+        }
+
+        return unsubscribe;
+      },
 
       login: async (email, password) => {
         set({ isLoading: true, error: null });
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
+        try {
+          const user = await authService.loginWithEmail(email, password);
 
-        // Check mock database
-        const stored = mockUsers.get(email);
-        if (stored && stored.password === password) {
-          set({ user: stored.user, isLoading: false });
-          return true;
-        }
-
-        // Check localStorage for demo purposes
-        const localUser = localStorage.getItem(`uptime_user_${email}`);
-        if (localUser) {
-          const userData = JSON.parse(localUser);
-          if (userData.password === password) {
-            set({ user: userData.user, isLoading: false });
-            return true;
+          if (isDemoMode()) {
+            localStorage.setItem('uptime_demo_user', JSON.stringify(user));
           }
-        }
 
-        set({ error: '이메일 또는 비밀번호가 올바르지 않습니다.', isLoading: false });
-        return false;
-      },
+          set({ user, isLoading: false });
+          return true;
+        } catch (error: any) {
+          let errorMessage = '로그인에 실패했습니다.';
 
-      register: async (email, password, displayName) => {
-        set({ isLoading: true, error: null });
+          if (error.code === 'auth/user-not-found') {
+            errorMessage = '등록되지 않은 이메일입니다.';
+          } else if (error.code === 'auth/wrong-password') {
+            errorMessage = '비밀번호가 올바르지 않습니다.';
+          } else if (error.code === 'auth/invalid-email') {
+            errorMessage = '유효하지 않은 이메일 형식입니다.';
+          } else if (error.code === 'auth/too-many-requests') {
+            errorMessage = '너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요.';
+          }
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Check if user exists
-        if (mockUsers.has(email) || localStorage.getItem(`uptime_user_${email}`)) {
-          set({ error: '이미 존재하는 이메일입니다.', isLoading: false });
+          set({ error: errorMessage, isLoading: false });
           return false;
         }
-
-        const newUser: User = {
-          id: uuidv4(),
-          email,
-          displayName: displayName || email.split('@')[0],
-          subscription: 'free',
-          createdAt: Date.now()
-        };
-
-        // Store in mock database and localStorage
-        mockUsers.set(email, { password, user: newUser });
-        localStorage.setItem(`uptime_user_${email}`, JSON.stringify({ password, user: newUser }));
-
-        set({ user: newUser, isLoading: false });
-        return true;
       },
 
-      logout: () => {
-        set({ user: null, error: null });
+      loginWithGoogle: async () => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const user = await authService.loginWithGoogle();
+
+          if (isDemoMode()) {
+            localStorage.setItem('uptime_demo_user', JSON.stringify(user));
+          }
+
+          set({ user, isLoading: false });
+          return true;
+        } catch (error: any) {
+          let errorMessage = 'Google 로그인에 실패했습니다.';
+
+          if (error.code === 'auth/popup-closed-by-user') {
+            errorMessage = '로그인이 취소되었습니다.';
+          } else if (error.code === 'auth/popup-blocked') {
+            errorMessage = '팝업이 차단되었습니다. 팝업 차단을 해제해주세요.';
+          }
+
+          set({ error: errorMessage, isLoading: false });
+          return false;
+        }
+      },
+
+      loginWithGithub: async () => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const user = await authService.loginWithGithub();
+
+          if (isDemoMode()) {
+            localStorage.setItem('uptime_demo_user', JSON.stringify(user));
+          }
+
+          set({ user, isLoading: false });
+          return true;
+        } catch (error: any) {
+          let errorMessage = 'GitHub 로그인에 실패했습니다.';
+
+          if (error.code === 'auth/popup-closed-by-user') {
+            errorMessage = '로그인이 취소되었습니다.';
+          } else if (error.code === 'auth/account-exists-with-different-credential') {
+            errorMessage = '이미 다른 방법으로 가입된 이메일입니다.';
+          }
+
+          set({ error: errorMessage, isLoading: false });
+          return false;
+        }
+      },
+
+      register: async (email, password, username) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const user = await authService.registerWithEmail(
+            email,
+            password,
+            username || email.split('@')[0]
+          );
+
+          if (isDemoMode()) {
+            localStorage.setItem('uptime_demo_user', JSON.stringify(user));
+          }
+
+          set({ user, isLoading: false });
+          return true;
+        } catch (error: any) {
+          let errorMessage = '회원가입에 실패했습니다.';
+
+          if (error.code === 'auth/email-already-in-use') {
+            errorMessage = '이미 사용 중인 이메일입니다.';
+          } else if (error.code === 'auth/weak-password') {
+            errorMessage = '비밀번호가 너무 약합니다. 6자 이상 입력해주세요.';
+          } else if (error.code === 'auth/invalid-email') {
+            errorMessage = '유효하지 않은 이메일 형식입니다.';
+          }
+
+          set({ error: errorMessage, isLoading: false });
+          return false;
+        }
+      },
+
+      logout: async () => {
+        try {
+          await authService.logout();
+
+          if (isDemoMode()) {
+            localStorage.removeItem('uptime_demo_user');
+          }
+
+          set({ user: null, error: null });
+        } catch (error) {
+          set({ error: '로그아웃에 실패했습니다.' });
+        }
+      },
+
+      resetPassword: async (email) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          await authService.resetPassword(email);
+          set({ isLoading: false });
+          return true;
+        } catch (error: any) {
+          let errorMessage = '비밀번호 재설정 이메일 발송에 실패했습니다.';
+
+          if (error.code === 'auth/user-not-found') {
+            errorMessage = '등록되지 않은 이메일입니다.';
+          }
+
+          set({ error: errorMessage, isLoading: false });
+          return false;
+        }
       },
 
       updateProfile: (updates) => {
@@ -107,12 +228,8 @@ export const useAuthStore = create<AuthStore>()(
         const updatedUser = { ...user, ...updates };
         set({ user: updatedUser });
 
-        // Update localStorage
-        const localUser = localStorage.getItem(`uptime_user_${user.email}`);
-        if (localUser) {
-          const userData = JSON.parse(localUser);
-          userData.user = updatedUser;
-          localStorage.setItem(`uptime_user_${user.email}`, JSON.stringify(userData));
+        if (isDemoMode()) {
+          localStorage.setItem('uptime_demo_user', JSON.stringify(updatedUser));
         }
       },
 
@@ -120,10 +237,13 @@ export const useAuthStore = create<AuthStore>()(
         const { user, updateProfile } = get();
         if (!user) return;
 
-        updateProfile({
-          subscription: tier,
-          subscriptionExpiresAt: expiresAt || (Date.now() + 30 * 24 * 60 * 60 * 1000)
-        });
+        const subscriptionExpiresAt = expiresAt || (Date.now() + 30 * 24 * 60 * 60 * 1000);
+        updateProfile({ subscription: tier, subscriptionExpiresAt });
+
+        // Sync with Firestore
+        if (!isDemoMode()) {
+          authService.updateUserSubscription(user.id, tier).catch(console.error);
+        }
       },
 
       checkSubscription: () => {
@@ -132,7 +252,6 @@ export const useAuthStore = create<AuthStore>()(
         if (user.subscription === 'free') return true;
 
         if (user.subscriptionExpiresAt && user.subscriptionExpiresAt < Date.now()) {
-          // Subscription expired, revert to free
           get().updateProfile({ subscription: 'free', subscriptionExpiresAt: undefined });
           return false;
         }
@@ -141,7 +260,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       createSave: (name, gameState) => {
-        const { user, saves } = get();
+        const { saves } = get();
         const limit = get().getSaveLimit();
 
         if (limit !== -1 && saves.length >= limit) {
@@ -150,7 +269,7 @@ export const useAuthStore = create<AuthStore>()(
         }
 
         const newSave: SaveData = {
-          id: uuidv4(),
+          id: generateId(),
           name,
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -187,9 +306,28 @@ export const useAuthStore = create<AuthStore>()(
         switch (user.subscription) {
           case 'free': return 1;
           case 'starter': return 3;
-          case 'pro': return -1; // unlimited
+          case 'pro': return -1;
           case 'enterprise': return -1;
           default: return 1;
+        }
+      },
+
+      updateStats: async (stats) => {
+        const { user, updateProfile } = get();
+        if (!user) return;
+
+        const currentStats = user.stats || {
+          totalPlayTime: 0,
+          highestDay: 0,
+          achievementsUnlocked: 0,
+          totalRevenue: 0
+        };
+
+        const updatedStats = { ...currentStats, ...stats };
+        updateProfile({ stats: updatedStats });
+
+        if (!isDemoMode()) {
+          await authService.updateUserStats(user.id, updatedStats);
         }
       },
 

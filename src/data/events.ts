@@ -299,6 +299,252 @@ export const events: GameEvent[] = [
       { text: '💾 클라우드 백업 서비스 (Pro)', effect: { money: -500, reputation: 5 }, premium: true }
     ],
     icon: '💾'
+  },
+
+  // Additional events - Community
+  {
+    id: 'community_feedback',
+    title: '💬 커뮤니티 피드백 세션',
+    description: '사용자들이 직접 피드백을 주고 싶어합니다.',
+    choices: [
+      { text: 'AMA 세션 개최', effect: { users: 300, reputation: 20, day: 1 } },
+      { text: '설문조사 진행', effect: { reputation: 10, techDebt: -5 } },
+      { text: '무시하고 개발 집중', effect: { reputation: -10 } }
+    ],
+    icon: '💬',
+    minDay: 10
+  },
+  {
+    id: 'open_source_contribution',
+    title: '🌐 오픈소스 기여 요청',
+    description: '개발자 커뮤니티에서 핵심 기능의 오픈소스화를 요청합니다.',
+    choices: [
+      { text: '일부 기능 오픈소스화', effect: { reputation: 30, users: 500, techDebt: -10 } },
+      { text: '거절', effect: { reputation: -5 } },
+      { text: '🔓 전체 오픈소스화 (Pro)', effect: { reputation: 50, users: 1000 }, premium: true }
+    ],
+    icon: '🌐',
+    minDay: 25
+  },
+  {
+    id: 'hackathon_winner',
+    title: '🏆 해커톤 우승팀 합류',
+    description: '해커톤 우승팀이 서비스에 관심을 보이고 있습니다.',
+    choices: [
+      { text: '팀 영입 ($1500)', effect: { money: -1500, techDebt: -20, reputation: 15 } },
+      { text: '파트너십 제안', effect: { users: 300, reputation: 10 } },
+      { text: '관심 없음', effect: {} }
+    ],
+    icon: '🏆',
+    minDay: 20
+  },
+
+  // Additional events - Technical
+  {
+    id: 'database_migration',
+    title: '🗄️ 데이터베이스 마이그레이션',
+    description: '성능 향상을 위해 데이터베이스 전환을 고려해야 합니다.',
+    choices: [
+      { text: 'PostgreSQL로 전환 ($600)', effect: { money: -600, techDebt: -15, day: 2 } },
+      { text: 'MongoDB로 전환 ($500)', effect: { money: -500, techDebt: -10, day: 1 } },
+      { text: '현재 DB 최적화 ($200)', effect: { money: -200, techDebt: -5 } }
+    ],
+    icon: '🗄️',
+    minDay: 15
+  },
+  {
+    id: 'api_rate_limit',
+    title: '⏱️ API 사용량 폭증',
+    description: '서드파티 API 사용량이 한도를 초과했습니다.',
+    choices: [
+      { text: '플랜 업그레이드 ($400/월)', effect: { money: -400 } },
+      { text: '자체 솔루션 개발', effect: { techDebt: 20, day: 3 } },
+      { text: '🔄 캐싱 레이어 도입 (Pro)', effect: { money: -200, techDebt: -5 }, premium: true }
+    ],
+    icon: '⏱️'
+  },
+  {
+    id: 'ssl_expiry',
+    title: '🔐 SSL 인증서 만료 임박',
+    description: 'SSL 인증서가 곧 만료됩니다!',
+    choices: [
+      { text: '즉시 갱신 ($100)', effect: { money: -100 } },
+      { text: "Let's Encrypt로 전환 (무료)", effect: { techDebt: 5 } },
+      { text: '와일드카드 인증서 구매 ($300)', effect: { money: -300, reputation: 5 } }
+    ],
+    icon: '🔐'
+  },
+  {
+    id: 'performance_audit',
+    title: '📊 성능 감사 결과',
+    description: '성능 감사 결과 여러 개선점이 발견되었습니다.',
+    choices: [
+      { text: '전체 최적화 착수', effect: { techDebt: -25, day: 3, money: -500 } },
+      { text: '핵심 이슈만 해결', effect: { techDebt: -10, day: 1 } },
+      { text: '📈 성능 모니터링 도입 (Pro)', effect: { money: -300, techDebt: -15 }, premium: true }
+    ],
+    icon: '📊',
+    minDay: 12
+  },
+
+  // Additional events - Business
+  {
+    id: 'enterprise_client',
+    title: '🏢 대기업 고객 문의',
+    description: '대기업에서 엔터프라이즈 플랜에 관심을 보입니다.',
+    choices: [
+      { text: '맞춤 솔루션 제안', effect: { money: 5000, reputation: 20, day: 2 } },
+      { text: '표준 플랜 안내', effect: { money: 2000, reputation: 5 } },
+      { text: '아직 준비되지 않음', effect: { reputation: -5 } }
+    ],
+    icon: '🏢',
+    minDay: 30
+  },
+  {
+    id: 'partnership_offer',
+    title: '🤝 파트너십 제안',
+    description: '관련 분야 기업에서 파트너십을 제안했습니다.',
+    choices: [
+      { text: '적극적 파트너십', effect: { money: 1000, users: 800, reputation: 15 } },
+      { text: '제한적 협력', effect: { money: 500, users: 300, reputation: 5 } },
+      { text: '독립 유지', effect: { reputation: 5 } }
+    ],
+    icon: '🤝',
+    minDay: 25
+  },
+  {
+    id: 'conference_invitation',
+    title: '🎤 컨퍼런스 발표 초청',
+    description: '유명 테크 컨퍼런스에서 발표를 요청했습니다.',
+    choices: [
+      { text: '발표 수락', effect: { reputation: 30, users: 500, day: 1 } },
+      { text: '온라인 참여로 대체', effect: { reputation: 15, users: 200 } },
+      { text: '다음 기회에', effect: {} }
+    ],
+    icon: '🎤',
+    minDay: 20
+  },
+  {
+    id: 'acquisition_offer',
+    title: '💼 인수 제안',
+    description: '대기업에서 서비스 인수 의사를 밝혔습니다.',
+    choices: [
+      { text: '거절하고 독립 유지', effect: { reputation: 20 } },
+      { text: '협상 테이블에 앉기', effect: { money: 10000, day: 5 } },
+      { text: '🏆 전략적 투자 유치 (Pro)', effect: { money: 20000, reputation: 30 }, premium: true }
+    ],
+    icon: '💼',
+    minDay: 60,
+    phase: 'app'
+  },
+
+  // Additional events - Team
+  {
+    id: 'remote_work_policy',
+    title: '🏠 리모트 워크 정책',
+    description: '팀에서 재택근무 정책 변경을 요청합니다.',
+    choices: [
+      { text: '완전 재택 허용', effect: { techDebt: -5, reputation: 10 } },
+      { text: '하이브리드 도입', effect: { reputation: 5, money: -200 } },
+      { text: '오피스 근무 유지', effect: { reputation: -5, techDebt: 5 } }
+    ],
+    icon: '🏠',
+    minDay: 15
+  },
+  {
+    id: 'talent_hunt',
+    title: '🔍 인재 채용 기회',
+    description: '뛰어난 개발자가 지원했습니다.',
+    choices: [
+      { text: '경쟁력 있는 연봉 제시 ($1000)', effect: { money: -1000, techDebt: -15 } },
+      { text: '스톡옵션과 함께 제안', effect: { money: -500, techDebt: -10 } },
+      { text: '현재는 채용 불가', effect: {} }
+    ],
+    icon: '🔍',
+    minDay: 10
+  },
+  {
+    id: 'team_burnout',
+    title: '😰 팀 번아웃 징후',
+    description: '팀원들이 지쳐보입니다.',
+    choices: [
+      { text: '강제 휴가 부여 (3일)', effect: { day: 3, techDebt: -10, reputation: 10 } },
+      { text: '워크로드 조정', effect: { techDebt: 5, reputation: 5 } },
+      { text: '그냥 밀어붙이기', effect: { techDebt: 20, reputation: -15 } }
+    ],
+    icon: '😰',
+    minDay: 30
+  },
+
+  // Additional events - Marketing
+  {
+    id: 'viral_tiktok',
+    title: '🎵 TikTok 바이럴',
+    description: '서비스 관련 영상이 TikTok에서 화제입니다!',
+    choices: [
+      { text: '공식 계정 개설 ($300)', effect: { money: -300, users: 1500, reputation: 20 } },
+      { text: '크리에이터와 협업', effect: { money: -500, users: 2000, reputation: 25 } },
+      { text: '자연스러운 성장 지켜보기', effect: { users: 500, reputation: 10 } }
+    ],
+    icon: '🎵'
+  },
+  {
+    id: 'influencer_review',
+    title: '📹 인플루언서 리뷰',
+    description: '유명 테크 인플루언서가 리뷰를 올렸습니다!',
+    choices: [
+      { text: '긍정적 리뷰였다!', effect: { users: 1000, reputation: 25 } },
+      { text: '개선점 언급', effect: { users: 300, reputation: 5, techDebt: -5 } }
+    ],
+    icon: '📹',
+    minDay: 20
+  },
+  {
+    id: 'product_hunt_launch',
+    title: '🚀 Product Hunt 런칭',
+    description: 'Product Hunt에 런칭할 기회입니다!',
+    choices: [
+      { text: '대대적 런칭', effect: { money: -200, users: 2000, reputation: 30, day: 1 } },
+      { text: '소규모 테스트 런칭', effect: { users: 500, reputation: 10 } },
+      { text: '나중에 런칭', effect: {} }
+    ],
+    icon: '🚀',
+    minDay: 15
+  },
+
+  // Special rare events
+  {
+    id: 'lucky_break',
+    title: '🌈 대박 기회!',
+    description: '유명 기업에서 서비스를 내부 도구로 채택하고 싶어합니다!',
+    choices: [
+      { text: '계약 체결!', effect: { money: 15000, users: 5000, reputation: 50 } }
+    ],
+    icon: '🌈',
+    minDay: 40
+  },
+  {
+    id: 'disaster_recovery',
+    title: '🆘 대규모 장애',
+    description: '여러 시스템에서 동시에 장애가 발생했습니다!',
+    choices: [
+      { text: '올인 복구 모드 ($2000)', effect: { money: -2000, uptime: -20, day: 1 } },
+      { text: '우선순위별 복구', effect: { uptime: -35, users: -500, reputation: -20 } },
+      { text: '🛡️ DR 플랜 가동 (Pro)', effect: { money: -1000, uptime: -10 }, premium: true }
+    ],
+    icon: '🆘',
+    minDay: 25
+  },
+  {
+    id: 'zero_day_exploit',
+    title: '🚨 제로데이 취약점!',
+    description: '사용 중인 라이브러리에서 제로데이 취약점이 발견되었습니다!',
+    choices: [
+      { text: '즉시 패치 (긴급 대응)', effect: { techDebt: 10, uptime: -5 } },
+      { text: '대체 라이브러리로 전환 ($500)', effect: { money: -500, day: 2, techDebt: -5 } },
+      { text: '🔒 보안팀 긴급 가동 (Pro)', effect: { money: -300, reputation: 10 }, premium: true }
+    ],
+    icon: '🚨'
   }
 ];
 
