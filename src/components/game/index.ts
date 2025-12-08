@@ -18,3 +18,5 @@ export { ThemeSelect } from './ThemeSelect';
 export { MultiplayerLobby } from './MultiplayerLobby';
 export { GuildPanel } from './GuildPanel';
 export { SeasonPanel } from './SeasonPanel';
+export { AnalyticsDashboard } from './AnalyticsDashboard';
+export { AchievementPanel } from './AchievementPanel';

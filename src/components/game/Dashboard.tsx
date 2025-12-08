@@ -14,9 +14,11 @@ import { NotificationToast } from './Notifications';
 import { GuildPanel } from './GuildPanel';
 import { SeasonPanel } from './SeasonPanel';
 import { MultiplayerLobby } from './MultiplayerLobby';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { AchievementPanel } from './AchievementPanel';
 import { Card, Badge, Modal } from '../ui';
 import { PricingPage } from '../../pages/PricingPage';
-import { Settings, Trophy, BarChart3, Shield, Medal, Users } from 'lucide-react';
+import { Settings, Trophy, BarChart3, Shield, Medal, Users, Award, PieChart } from 'lucide-react';
 import { cn } from '../../utils/helpers';
 
 type Tab = 'tickets' | 'team' | 'upgrades' | 'stats';
@@ -28,6 +30,8 @@ export function Dashboard() {
   const [showGuild, setShowGuild] = useState(false);
   const [showSeason, setShowSeason] = useState(false);
   const [showMultiplayer, setShowMultiplayer] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
 
   // Initialize game loop
   useGameLoop();
@@ -89,6 +93,27 @@ export function Dashboard() {
                 >
                   <Users className="w-5 h-5 text-success-400 group-hover:scale-110 transition-transform" />
                   <span className="text-xs text-dark-400">멀티</span>
+                </button>
+              </div>
+            </Card>
+
+            {/* Progress & Stats Buttons */}
+            <Card className="p-3">
+              <h4 className="text-xs text-dark-500 mb-2 uppercase tracking-wider">진행</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setShowAchievements(true)}
+                  className="flex flex-col items-center gap-1 p-2 rounded-lg bg-dark-800 hover:bg-dark-700 transition-colors group"
+                >
+                  <Award className="w-5 h-5 text-orange-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs text-dark-400">업적</span>
+                </button>
+                <button
+                  onClick={() => setShowAnalytics(true)}
+                  className="flex flex-col items-center gap-1 p-2 rounded-lg bg-dark-800 hover:bg-dark-700 transition-colors group"
+                >
+                  <PieChart className="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs text-dark-400">분석</span>
                 </button>
               </div>
             </Card>
@@ -202,6 +227,12 @@ export function Dashboard() {
       >
         <MultiplayerLobby />
       </Modal>
+
+      {/* Analytics Dashboard */}
+      <AnalyticsDashboard isOpen={showAnalytics} onClose={() => setShowAnalytics(false)} />
+
+      {/* Achievement Panel */}
+      <AchievementPanel isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
     </div>
   );
 }
