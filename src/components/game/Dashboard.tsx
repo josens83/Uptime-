@@ -11,9 +11,12 @@ import { PhaseProgress } from './PhaseProgress';
 import { TeamManagement } from './TeamManagement';
 import { UpgradeShop } from './UpgradeShop';
 import { NotificationToast } from './Notifications';
+import { GuildPanel } from './GuildPanel';
+import { SeasonPanel } from './SeasonPanel';
+import { MultiplayerLobby } from './MultiplayerLobby';
 import { Card, Badge, Modal } from '../ui';
 import { PricingPage } from '../../pages/PricingPage';
-import { Settings, Trophy, BarChart3 } from 'lucide-react';
+import { Settings, Trophy, BarChart3, Shield, Medal, Users } from 'lucide-react';
 import { cn } from '../../utils/helpers';
 
 type Tab = 'tickets' | 'team' | 'upgrades' | 'stats';
@@ -22,6 +25,9 @@ export function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('tickets');
   const [showPricing, setShowPricing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showGuild, setShowGuild] = useState(false);
+  const [showSeason, setShowSeason] = useState(false);
+  const [showMultiplayer, setShowMultiplayer] = useState(false);
 
   // Initialize game loop
   useGameLoop();
@@ -58,6 +64,34 @@ export function Dashboard() {
 
             {/* Phase Progress */}
             <PhaseProgress />
+
+            {/* Quick Access Buttons */}
+            <Card className="p-3">
+              <h4 className="text-xs text-dark-500 mb-2 uppercase tracking-wider">소셜</h4>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => setShowSeason(true)}
+                  className="flex flex-col items-center gap-1 p-2 rounded-lg bg-dark-800 hover:bg-dark-700 transition-colors group"
+                >
+                  <Medal className="w-5 h-5 text-yellow-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs text-dark-400">시즌</span>
+                </button>
+                <button
+                  onClick={() => setShowGuild(true)}
+                  className="flex flex-col items-center gap-1 p-2 rounded-lg bg-dark-800 hover:bg-dark-700 transition-colors group"
+                >
+                  <Shield className="w-5 h-5 text-primary-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs text-dark-400">길드</span>
+                </button>
+                <button
+                  onClick={() => setShowMultiplayer(true)}
+                  className="flex flex-col items-center gap-1 p-2 rounded-lg bg-dark-800 hover:bg-dark-700 transition-colors group"
+                >
+                  <Users className="w-5 h-5 text-success-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs text-dark-400">멀티</span>
+                </button>
+              </div>
+            </Card>
 
             {/* Resources - Hidden on mobile, shown on desktop */}
             <div className="hidden lg:block">
@@ -151,6 +185,22 @@ export function Dashboard() {
         size="sm"
       >
         <SettingsPanel onClose={() => setShowSettings(false)} />
+      </Modal>
+
+      {/* Guild Panel */}
+      <GuildPanel isOpen={showGuild} onClose={() => setShowGuild(false)} />
+
+      {/* Season Panel */}
+      <SeasonPanel isOpen={showSeason} onClose={() => setShowSeason(false)} />
+
+      {/* Multiplayer Modal */}
+      <Modal
+        isOpen={showMultiplayer}
+        onClose={() => setShowMultiplayer(false)}
+        title="멀티플레이어"
+        size="lg"
+      >
+        <MultiplayerLobby />
       </Modal>
     </div>
   );
