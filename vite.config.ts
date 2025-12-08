@@ -82,12 +82,24 @@ export default defineConfig({
   },
   build: {
     sourcemap: false,
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           ui: ['framer-motion', 'lucide-react'],
-          state: ['zustand']
+          state: ['zustand'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          game: [
+            './src/components/game/Dashboard',
+            './src/components/game/TicketQueue',
+            './src/components/game/UpgradeShop'
+          ],
+          social: [
+            './src/components/game/GuildPanel',
+            './src/components/game/SeasonPanel',
+            './src/components/game/MultiplayerLobby'
+          ]
         }
       }
     }
