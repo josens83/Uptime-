@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
+import { ErrorBoundary, ErrorToast } from './components/common';
 import './index.css';
 
 // Lazy load components for code splitting
@@ -37,31 +38,43 @@ function App() {
 
   if (!isAuthenticated) {
     return (
-      <Suspense fallback={<LoadingSpinner />}>
-        <AuthPage onSuccess={handleAuthSuccess} />
-      </Suspense>
+      <ErrorBoundary level="page" name="AuthPage">
+        <Suspense fallback={<LoadingSpinner />}>
+          <AuthPage onSuccess={handleAuthSuccess} />
+        </Suspense>
+        <ErrorToast />
+      </ErrorBoundary>
     );
   }
 
   return (
-    <Router>
-      <Suspense fallback={<LoadingSpinner />}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/pricing" element={
-            <div className="min-h-screen bg-dark-950 p-8">
-              <div className="max-w-6xl mx-auto">
-                <h1 className="text-3xl font-bold text-center mb-8 text-gradient from-primary-400 to-purple-400">
-                  프리미엄 플랜
-                </h1>
-                <PricingPage onClose={() => window.history.back()} />
-              </div>
-            </div>
-          } />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
-    </Router>
+    <ErrorBoundary level="page" name="App">
+      <Router>
+        <Suspense fallback={<LoadingSpinner />}>
+          <Routes>
+            <Route path="/" element={
+              <ErrorBoundary level="section" name="Dashboard">
+                <Dashboard />
+              </ErrorBoundary>
+            } />
+            <Route path="/pricing" element={
+              <ErrorBoundary level="section" name="Pricing">
+                <div className="min-h-screen bg-dark-950 p-8">
+                  <div className="max-w-6xl mx-auto">
+                    <h1 className="text-3xl font-bold text-center mb-8 text-gradient from-primary-400 to-purple-400">
+                      프리미엄 플랜
+                    </h1>
+                    <PricingPage onClose={() => window.history.back()} />
+                  </div>
+                </div>
+              </ErrorBoundary>
+            } />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+        <ErrorToast />
+      </Router>
+    </ErrorBoundary>
   );
 }
 
